@@ -1,3 +1,7 @@
+#"/Users/morganfine-morris/test/Yan_all_gnap_eL_Bursts_Results.csv"
+
+
+
 #creating a tabbed interface:
 #http://ubuntuforums.org/showthread.php?t=1144712 
 import sys, os.path, inspect
@@ -26,7 +30,7 @@ class Example(qtg.QWidget):
             TODO: error catching. maybe set a current_directory flag here?
         """
         
-        filepath  = qtg.QFileDialog.getOpenfilepath(self, "Choose Data File", self.curr_dir)
+        filepath  = qtg.QFileDialog.getOpenFileName(self, "Choose Data File", self.curr_dir)
             
         if filepath:
             self.filepath = filepath
@@ -37,6 +41,9 @@ class Example(qtg.QWidget):
             except Exception as e:
                 print e
                 pass #what should go here?
+                
+            self.load_file_preview()
+
         
     def open_dir_dialog(self):
         """Get the name of the folder where files output by the program
@@ -51,25 +58,26 @@ class Example(qtg.QWidget):
     def set_sep(self):
         print self.btn_group.checkedButton()
     
+    
     def load_file_preview(self):
         """
         modified from answer to stackoverflow question 10636024
         answer provided by user1319128 at Aug 20 '12 at 11:30 
         edited by Rostyslav Dzinko at Aug 20 '12 at 13:28 
         """
-        if not self.filepath:
-            return
+        numrows = 10
+        if not (self.filepath and self.sep):
+            print "fail to display table."
         
-        df  = pd.read_table(self.filepath, index_col = 0,header = 0, nrows=10)
-        print df
+        df  = pd.read_table(str(self.filepath), sep=self.sep, index_col = 0, header = 0, nrows=numrows)
         
-        self.datatable = qtg.QTableWidget(parent=self)
-        self.datatable.setColumnCount(len(df.columns)) #get all columns
-        self.datatable.setRowCount(10)#len(df.index))   #get only the first 10 rows
+        self.table.setColumnCount(len(df.columns)) #get all columns
+        self.table.setRowCount(len(df.index))   #get only the first 10 rows
         
         for i in range(len(df.index)):
             for j in range(len(df.columns)):
-                self.datatable.setItem(i, j, qtg.QTableWidgetItem(str(df.iget_value(i, j))))
+                table_item = qtg.QTableWidgetItem(str(df.iget_value(i, j)))
+                self.table.setItem(i, j, table_item)
 
     def initUI(self, width, height):
         #setup and show window
@@ -160,6 +168,7 @@ class Example(qtg.QWidget):
         load_page.addLayout(filepath_boxes)
         
         # separators
+        self.sep = "," #temporarily set to "," until this section works
         """not dealing with separators yet. It's too much
         separators_label = qtg.QLabel('Separators')
         custom_sep_label = qtg.QLabel('custom')
@@ -212,20 +221,17 @@ class Example(qtg.QWidget):
         row_boundries.addWidget(time_col_label)
         row_boundries.addWidget(time_col)
         row_boundries.addWidget(reset_cols_btn)
-
-        #row_boundries.addStretch(1)
         
         load_page.addLayout(row_boundries)
 
         ### file preview
         
         file_prev_label = qtg.QLabel('File Preview')
-        
-        table = qtg.QTableView()
+        self.table = qtg.QTableWidget(self)
         
         table_box = qtg.QVBoxLayout()
         table_box.addWidget(file_prev_label)
-        table_box.addWidget(table)
+        table_box.addWidget(self.table)
         load_page.addLayout(table_box)
 
         

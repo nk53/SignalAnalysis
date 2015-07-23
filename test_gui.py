@@ -16,18 +16,20 @@ class Example(qtg.QWidget):
     def __init__(self, width=300, height=300):
         super(Example, self).__init__()
         
+        self.delimiter_name_symb = {"comma":",", "space": " ", "tab": "\t"}
+        self.filepath = "" #"/Users/morganfine-morris/test/t_vals from 2way ANOVA of Peaks per Burst.csv" #test file
         self.curr_dir = os.path.expanduser("~")
         self.openicon = qtg.QIcon("pics/open_folder.png") #'file dialog' icon
-        #self.filepath = "/Users/morganfine-morris/test/t_vals from 2way ANOVA of Peaks per Burst.csv"
-        self.sep = " " #temporarily set to "," until separators section works
+        self.sep = "," #temporarily set to "," until separators section works
 
         self.initUI(width, height)
         
         
     def open_file_dialog(self):
-        """"Get the name of the file to import.
-            Set the output_dir to the file dir by default
-            TODO: error catching. maybe set a current_directory flag here?
+        """"
+        Get the name of the file to import.
+        Set the output_dir to the file dir by default
+        TODO: error catching. maybe set a current_directory flag here?
         """
         
         filepath  = qtg.QFileDialog.getOpenFileName(self, "Choose Data File", self.curr_dir)
@@ -46,8 +48,10 @@ class Example(qtg.QWidget):
 
         
     def open_dir_dialog(self):
-        """Get the name of the folder where files output by the program
-        should be saved."""
+        """
+        Get the name of the folder where files output by the program
+        should be saved.
+        """
             
         directory = qtg.QFileDialog.getExistingDirectory(self, "Choose Output Directory", self.curr_dir)
         if directory:
@@ -55,10 +59,18 @@ class Example(qtg.QWidget):
             self.curr_dir = directory
             self.output_datapath.setText(self.output_directory)
         
+        
     def set_sep(self):
-        print self.btn_group.checkedButton()
-    
-    
+        button = self.btn_group.checkedButton()
+        key = str(button.text())
+        try:
+            print key, self.delimiter_name_symb[key]
+            self.sep = self.delimiter_name_symb[key]
+        except:
+            #else custom option. process the text box
+            pass
+        self.load_file_preview()
+    ''' 
     def _map_dataframe_to_QTableWidget(self, dataframe, qt_table):
         """"generalized so that it can be used with any QTableWidget"""
         
@@ -96,13 +108,32 @@ class Example(qtg.QWidget):
         self.preview_table.setRowCount(len(df.index))
         
         self._map_dataframe_to_QTableWidget(df, self.preview_table)
-        
+    '''
+    
+    def error_dialog(self, exception):
+        err_dialog = qtg.QMessageBox(title=str(type(exception)), text=exception.message, parent=self)
+        close = qtg.QPushButton(text="C&lose", parent=err_dialog)
+        err_dialog.addButton(close, 0)
+        close.clicked.connect(err_dialog.closeEvent)
         
     def load_file_preview(self):
     
         numrows = 5
-        if not (self.filepath and self.sep):
-            print "failed to display table."
+        
+        #check for self.filepath
+        try:
+            if not os.path.isfile(self.filepath):
+                return
+        except Exception as e:
+            #not sure this part is actually necessary
+            self.error_dialog(e)
+                    
+        #check for self.sep
+        try:
+            self.sep
+        except:
+            self.sep = ","
+            
             
         #open file, read lines, split by delimiter
         all_lines = []
@@ -126,11 +157,7 @@ class Example(qtg.QWidget):
                 item = qtg.QTableWidgetItem(str(element))
                 self.preview_table.setItem(n, nn, item)
         
-        
-        
-            
-            
-
+    
 
     def initUI(self, width, height):
         #setup and show window
@@ -138,26 +165,7 @@ class Example(qtg.QWidget):
         self.setMinimumSize(500,650)
         self.center()
         self.setWindowTitle("Signal Analysis") #once a file has been imported, change the name
-        #self.setWindowIcon(qtg.QIcon("pics/signal2_temp.png"))#"pics/thicklines.png"))
-    
-        """
-        exitAction = qtg.QAction(qtg.QIcon("exit.png"), "&Exit", self)
-        exitAction.setShortcut("Ctrl+Q")
-        exitAction.setStatusTip("Exit Application")
-        exitAction.triggered.connect(qtg.qApp.quit)
-        
-        #menu bar
-        menubar = qtg.QMenuBar()
-        try:
-            import platform
-            platform.mac_ver() #should fail if not a mac (test this!)
-            menubar.setNativeMenuBar(False) #necessary for macs!
-        except:
-            pass
-        file_menu = menubar.addMenu("&File")
-        file_menu.addAction(exitAction)
-        """
-        
+            
         #make tabs_widg widget and tabs
         tabs_widg = qtg.QTabWidget(self)
         load_tab = qtg.QWidget()
@@ -204,7 +212,6 @@ class Example(qtg.QWidget):
 
         #connections
         file_dialog_btn.clicked.connect(self.open_file_dialog)
-        
         folder_dialog_btn.clicked.connect(self.open_dir_dialog)
         self.input_datapath.textChanged.connect(self.load_file_preview)
         
@@ -218,11 +225,11 @@ class Example(qtg.QWidget):
         separators_label = qtg.QLabel('Separators')
         custom_sep_label = qtg.QLabel('custom')
 
-        comma_sep = qtg.QCheckBox('commas', self)
+        comma_sep = qtg.QRadioButton('comma', self)
         comma_sep.setChecked(True)
-        tab_sep = qtg.QCheckBox('tab', self)
-        space_sep = qtg.QCheckBox('space', self)
-        custom_sep = qtg.QCheckBox('custom', self)
+        tab_sep = qtg.QRadioButton('tab', self)
+        space_sep = qtg.QRadioButton('space', self)
+        custom_sep = qtg.QRadioButton('custom', self)
         custom_text = qtg.QLineEdit('custom', self)
         custom_text.setReadOnly(True) #if custom_sep check, change to false
         self.btn_group = qtg.QButtonGroup()
@@ -230,9 +237,11 @@ class Example(qtg.QWidget):
         self.btn_group.addButton(tab_sep)
         self.btn_group.addButton(space_sep)
         self.btn_group.addButton(custom_sep)
-        #for button in btn_group.buttons:
-        #    btn_group.stateChanged.connect(set_sep)
-
+        
+        
+        self.btn_group.buttonClicked.connect(self.set_sep)
+        #commma_sep.toggle.connect()
+    
         #btn_group.stateChanged.connect(
         
         separators = qtg.QHBoxLayout()

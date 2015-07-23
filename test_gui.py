@@ -18,9 +18,9 @@ class Example(qtg.QWidget):
         
         self.curr_dir = os.path.expanduser("~")
         self.openicon = qtg.QIcon("pics/open_folder.png") #'file dialog' icon
-        self.filepath = "/Users/morganfine-morris/test/t_vals from 2way ANOVA of Peaks per Burst.csv"
-        
-        
+        #self.filepath = "/Users/morganfine-morris/test/t_vals from 2way ANOVA of Peaks per Burst.csv"
+        self.sep = " " #temporarily set to "," until separators section works
+
         self.initUI(width, height)
         
         
@@ -122,8 +122,6 @@ class Example(qtg.QWidget):
         self.preview_table.setRowCount(numrows)        
         
         for n, line in enumerate(all_lines):
-            print n, line
-
             for nn, element in enumerate(line):
                 item = qtg.QTableWidgetItem(str(element))
                 self.preview_table.setItem(n, nn, item)
@@ -205,9 +203,10 @@ class Example(qtg.QWidget):
         outputfolder_box.addWidget(folder_dialog_btn)
 
         #connections
-        #file_dialog_btn.clicked.connect(self.open_file_dialog)
+        file_dialog_btn.clicked.connect(self.open_file_dialog)
         
         folder_dialog_btn.clicked.connect(self.open_dir_dialog)
+        self.input_datapath.textChanged.connect(self.load_file_preview)
         
         filepath_boxes = qtg.QVBoxLayout()
         filepath_boxes.addLayout(inputfile_box)
@@ -215,13 +214,12 @@ class Example(qtg.QWidget):
         
         load_page.addLayout(filepath_boxes)
         
-        # separators
-        self.sep = "," #temporarily set to "," until this section works
-        """not dealing with separators yet. It's too much
+        ## separators
         separators_label = qtg.QLabel('Separators')
         custom_sep_label = qtg.QLabel('custom')
 
         comma_sep = qtg.QCheckBox('commas', self)
+        comma_sep.setCheckable(True)
         tab_sep = qtg.QCheckBox('tab', self)
         space_sep = qtg.QCheckBox('space', self)
         custom_sep = qtg.QCheckBox('custom', self)
@@ -246,7 +244,6 @@ class Example(qtg.QWidget):
         separators.addWidget(custom_text)
         
         load_page.addLayout(separators)
-        """
         
         # row boundaries, time column
         first_row_label = qtg.QLabel('First Row (include column labels)')
@@ -308,8 +305,8 @@ def main():
     #d.show()
     
     ex = Example(800,800) 
-    ex.from_csv()#load_file_preview()
-    ex.load_file_preview()
+    #ex.from_csv()#load_file_preview()
+    #ex.load_file_preview()
 
     ex.show()
     

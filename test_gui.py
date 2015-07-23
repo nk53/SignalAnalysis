@@ -1,4 +1,3 @@
-#"/Users/morganfine-morris/test/Yan_all_gnap_eL_Bursts_Results.csv"
 
 
 
@@ -19,7 +18,8 @@ class Example(qtg.QWidget):
         
         self.curr_dir = os.path.expanduser("~")
         self.openicon = qtg.QIcon("pics/open_folder.png") #'file dialog' icon
-
+        self.filepath = "/Users/morganfine-morris/test/t_vals from 2way ANOVA of Peaks per Burst.csv"
+        
         
         self.initUI(width, height)
         
@@ -59,25 +59,80 @@ class Example(qtg.QWidget):
         print self.btn_group.checkedButton()
     
     
-    def load_file_preview(self):
+    def _map_dataframe_to_QTableWidget(self, dataframe, qt_table):
+        """"generalized so that it can be used with any QTableWidget"""
+        
+        collabels = dataframe.columns
+        rowlabels = dataframe.index
+        
+        #for column with row labels
+        #iterate thru the rows of the column and add info to col 0
+        for n, row in enumerate(rowlabels, start=1):
+            qt_table.setItem(n, 0, qtg.QTableWidgetItem(str(row)))
+
+        #for each column in table
+        #get column name. get column data
+        #iterate thru the rows of the column and add info
+        for n, col in enumerate(collabels, start=1):
+            qt_table.setItem(0, n, qtg.QTableWidgetItem(str(col)))
+            for ne, elem in enumerate(dataframe[col], start=1):
+                qt_table.setItem(ne, n, qtg.QTableWidgetItem(str(elem)))
+
+    
+    def from_csv(self):
         """
         modified from answer to stackoverflow question 10636024
         answer provided by user1319128 at Aug 20 '12 at 11:30 
         edited by Rostyslav Dzinko at Aug 20 '12 at 13:28 
         """
-        numrows = 10
+        numrows = 5
         if not (self.filepath and self.sep):
             print "fail to display table."
         
         df  = pd.read_table(str(self.filepath), sep=self.sep, index_col = 0, header = 0, nrows=numrows)
+
+        #add 1 to both column and row count to include row and column labels
+        self.preview_table.setColumnCount(len(df.columns))
+        self.preview_table.setRowCount(len(df.index))
         
-        self.table.setColumnCount(len(df.columns)) #get all columns
-        self.table.setRowCount(len(df.index))   #get only the first 10 rows
+        self._map_dataframe_to_QTableWidget(df, self.preview_table)
         
-        for i in range(len(df.index)):
-            for j in range(len(df.columns)):
-                table_item = qtg.QTableWidgetItem(str(df.iget_value(i, j)))
-                self.table.setItem(i, j, table_item)
+        
+    def load_file_preview(self):
+    
+        numrows = 5
+        if not (self.filepath and self.sep):
+            print "failed to display table."
+            
+        #open file, read lines, split by delimiter
+        all_lines = []
+        with open(self.filepath) as f:
+        
+            for n, line in enumerate(f):
+                if n >= numrows:
+                    break
+                
+                elements = line.strip().split(self.sep)
+                all_lines.append(elements)
+        
+        # determine max row length
+        # set row and column count
+        max_line_len = max(map(len, all_lines))    
+        self.preview_table.setColumnCount(max_line_len)
+        self.preview_table.setRowCount(numrows)        
+        
+        for n, line in enumerate(all_lines):
+            print n, line
+
+            for nn, element in enumerate(line):
+                item = qtg.QTableWidgetItem(str(element))
+                self.preview_table.setItem(n, nn, item)
+        
+        
+        
+            
+            
+
 
     def initUI(self, width, height):
         #setup and show window
@@ -150,21 +205,14 @@ class Example(qtg.QWidget):
         outputfolder_box.addWidget(folder_dialog_btn)
 
         #connections
-        file_dialog_btn.clicked.connect(self.open_file_dialog)
+        #file_dialog_btn.clicked.connect(self.open_file_dialog)
+        
         folder_dialog_btn.clicked.connect(self.open_dir_dialog)
         
         filepath_boxes = qtg.QVBoxLayout()
         filepath_boxes.addLayout(inputfile_box)
         filepath_boxes.addLayout(outputfolder_box)
         
-        '''
-        filepath_boxes.addWidget(input_label)
-        filepath_boxes.addWidget(self.input_datapath)
-        filepath_boxes.addWidget(file_dialog_btn)
-        filepath_boxes.addWidget(output_label)
-        filepath_boxes.addWidget(self.output_datapath)
-        filepath_boxes.addWidget(folder_dialog_btn)
-        '''
         load_page.addLayout(filepath_boxes)
         
         # separators
@@ -224,14 +272,13 @@ class Example(qtg.QWidget):
         
         load_page.addLayout(row_boundries)
 
-        ### file preview
-        
+        ## file preview
         file_prev_label = qtg.QLabel('File Preview')
-        self.table = qtg.QTableWidget(self)
-        
+        self.preview_table = qtg.QTableWidget(self)
+                
         table_box = qtg.QVBoxLayout()
         table_box.addWidget(file_prev_label)
-        table_box.addWidget(self.table)
+        table_box.addWidget(self.preview_table)
         load_page.addLayout(table_box)
 
         
@@ -261,7 +308,11 @@ def main():
     #d.show()
     
     ex = Example(800,800) 
+    ex.from_csv()#load_file_preview()
+    ex.load_file_preview()
+
     ex.show()
+    
     sys.exit(app.exec_())
 
 

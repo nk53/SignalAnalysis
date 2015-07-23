@@ -219,7 +219,7 @@ class Example(qtg.QWidget):
         custom_sep_label = qtg.QLabel('custom')
 
         comma_sep = qtg.QCheckBox('commas', self)
-        comma_sep.setCheckable(True)
+        comma_sep.setChecked(True)
         tab_sep = qtg.QCheckBox('tab', self)
         space_sep = qtg.QCheckBox('space', self)
         custom_sep = qtg.QCheckBox('custom', self)

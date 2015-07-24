@@ -182,78 +182,48 @@ class Example(qtg.QWidget):
         
         ### Page Components
 
-        ## make and add input file fields
+        ## make input file fields
         input_label = qtg.QLabel('Data File:')
         self.input_datapath = qtg.QLineEdit()
         file_dialog_btn = qtg.QPushButton(icon=self.openicon,text="")
         file_dialog_btn.setIconSize(qtc.QSize(20, 20))
         
-        inputfile_box = qtg.QHBoxLayout()
-        inputfile_box.addWidget(input_label)
-        inputfile_box.addWidget(self.input_datapath)
-        inputfile_box.addWidget(file_dialog_btn)
-        
-        ## make and add output folder fields
+        ## make output folder fields
         output_label = qtg.QLabel('Output Folder:')
         self.output_datapath = qtg.QLineEdit()
         folder_dialog_btn = qtg.QPushButton(icon=self.openicon,text="")
         folder_dialog_btn.setIconSize(qtc.QSize(20, 20))
-
-        outputfolder_box = qtg.QHBoxLayout()
-        outputfolder_box.addWidget(output_label)
-        outputfolder_box.addWidget(self.output_datapath)
-        outputfolder_box.addWidget(folder_dialog_btn)
 
         #connect file dialogs to approp. buttons and
         file_dialog_btn.clicked.connect(self.open_file_dialog)
         folder_dialog_btn.clicked.connect(self.open_dir_dialog)
         self.input_datapath.textChanged.connect(self.load_file_preview)
         
-        filepath_boxes = qtg.QVBoxLayout()
-        filepath_boxes.addLayout(inputfile_box)
-        filepath_boxes.addLayout(outputfolder_box)
-        
-        load_page.addLayout(filepath_boxes)
-        
         ## separators
         separators_label = qtg.QLabel('Delimiters')
-
         #provided separators
         comma_sep = qtg.QRadioButton('comma', self)
         comma_sep.setChecked(True)
         tab_sep = qtg.QRadioButton('tab', self)
         space_sep = qtg.QRadioButton('space', self)
-
-        #custom separator
-        custom_sep_label = qtg.QLabel('custom:')
         custom_sep = qtg.QRadioButton('custom', self)
-        self.custom_text = qtg.QLineEdit(parent=self)
-        self.custom_text.setPlaceholderText('enter custom delimiter symbol')
-        
-        #self.custom_text.focusInEvent()
-        
+        #add buttons to group (to make them exclusive)
         self.sep_btns = qtg.QButtonGroup()
         self.sep_btns.addButton(comma_sep)
         self.sep_btns.addButton(tab_sep)
         self.sep_btns.addButton(space_sep)
         self.sep_btns.addButton(custom_sep)
+        #misc for custom separator
+        custom_sep_label = qtg.QLabel('custom:')
+        self.custom_text = qtg.QLineEdit(parent=self)
+        self.custom_text.setPlaceholderText('enter custom delimiter symbol')
         
         #handel button clicks
         self.sep_btns.buttonClicked.connect(self.handle_sep_buttonpress)
         #if custom_text is focused on, auto check the custom button
         self.custom_text.textChanged.connect(self.get_custom_sep)
         
-        separators = qtg.QHBoxLayout()
-        separators.addWidget(separators_label)
-        separators.addWidget(comma_sep)
-        separators.addWidget(tab_sep)
-        separators.addWidget(space_sep)
-        separators.addWidget(custom_sep)
-        separators.addWidget(self.custom_text)
-
-        load_page.addLayout(separators)
-        
-        # row boundaries, time column
+        ## row boundaries, time column
         first_row_label = qtg.QLabel("First Row (include column labels)")
         last_row_label = qtg.QLabel("Last Row")
         first_row = qtg.QSpinBox()
@@ -266,6 +236,38 @@ class Example(qtg.QWidget):
         time_col.setWrapping(True)
         
         reset_cols_btn = qtg.QPushButton("&Reset Column Selection")
+
+        ## file preview
+        file_prev_label = qtg.QLabel('File Preview. Select columns to import.')
+        self.preview_table = qtg.QTableWidget(self)
+        self.preview_table.setSelectionMode(qtg.QAbstractItemView.MultiSelection)
+        self.preview_table.setSelectionBehavior(qtg.QAbstractItemView.SelectColumns)
+        reset_cols_btn.clicked.connect(self.preview_table.clearSelection)
+
+        ##positon elements on load_page tab        
+        
+        inputfile_box = qtg.QHBoxLayout()
+        inputfile_box.addWidget(input_label)
+        inputfile_box.addWidget(self.input_datapath)
+        inputfile_box.addWidget(file_dialog_btn)
+        
+        outputfolder_box = qtg.QHBoxLayout()
+        outputfolder_box.addWidget(output_label)
+        outputfolder_box.addWidget(self.output_datapath)
+        outputfolder_box.addWidget(folder_dialog_btn)
+
+        filepath_boxes = qtg.QVBoxLayout()
+        filepath_boxes.addLayout(inputfile_box)
+        filepath_boxes.addLayout(outputfolder_box)
+        
+        separators = qtg.QHBoxLayout()
+        separators.addWidget(separators_label)
+        separators.addWidget(comma_sep)
+        separators.addWidget(tab_sep)
+        separators.addWidget(space_sep)
+        separators.addWidget(custom_sep)
+        separators.addWidget(self.custom_text)
+
         row_boundries = qtg.QHBoxLayout()
         row_boundries.addWidget(first_row_label)
         row_boundries.addWidget(first_row)
@@ -273,22 +275,17 @@ class Example(qtg.QWidget):
         row_boundries.addWidget(last_row)
         row_boundries.addWidget(time_col_label)
         row_boundries.addWidget(time_col)
-        row_boundries.addWidget(reset_cols_btn)
+        row_boundries.addWidget(reset_cols_btn)        
         
-        load_page.addLayout(row_boundries)
-
-
-        ## file preview
-        file_prev_label = qtg.QLabel('File Preview')
-        self.preview_table = qtg.QTableWidget(self)
-                
         table_box = qtg.QVBoxLayout()
         table_box.addWidget(file_prev_label)
         table_box.addWidget(self.preview_table)
-        load_page.addLayout(table_box)
-
         
-        #fill up any remaining space
+        #add all boxes to load_page tab
+        load_page.addLayout(filepath_boxes)
+        load_page.addLayout(separators)
+        load_page.addLayout(row_boundries)
+        load_page.addLayout(table_box)
         load_page.addStretch(1)
         
         

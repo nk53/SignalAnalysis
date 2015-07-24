@@ -1,5 +1,17 @@
 
+"""
+what sorts of settings/preferences might I provide?
+-initial (default) directory file dialogs open in
+-should file dialogs remember the last visited directory, or always open to default 
+-autosave on/off
+-default separator type
+-default comment type
 
+
+doc string formatting:
+http://sphinx-doc.org/latest/ext/napoleon.html
+http://google.github.io/styleguide/pyguide.html#Comments
+"""
 
 #creating a tabbed interface:
 #http://ubuntuforums.org/showthread.php?t=1144712 
@@ -17,7 +29,7 @@ class Example(qtg.QWidget):
         super(Example, self).__init__()
         
         self.delimiter_name_symb = {"comma":",", "space": " ", "tab": "\t"}
-        self.filepath = "" #"/Users/morganfine-morris/test/t_vals from 2way ANOVA of Peaks per Burst.csv" #test file
+        self.filepath = "/Users/morganfine-morris/test/t_vals from 2way ANOVA of Peaks per Burst.csv" #test file
         self.curr_dir = os.path.expanduser("~")
         self.openicon = qtg.QIcon("pics/open_folder.png") #'file dialog' icon
         self.sep = "," #temporarily set to "," until separators section works
@@ -43,8 +55,10 @@ class Example(qtg.QWidget):
             except Exception as e:
                 print e
                 pass #what should go here?
-                
+            
+            self.setFocus() 
             self.load_file_preview()
+            
 
         
     def open_dir_dialog(self):
@@ -52,69 +66,22 @@ class Example(qtg.QWidget):
         Get the name of the folder where files output by the program
         should be saved.
         """
-            
         directory = qtg.QFileDialog.getExistingDirectory(self, "Choose Output Directory", self.curr_dir)
         if directory:
             self.output_directory = directory
             self.curr_dir = directory
             self.output_datapath.setText(self.output_directory)
+        self.setFocus()
         
-        
-    def set_sep(self):
-        button = self.btn_group.checkedButton()
-        key = str(button.text())
-        try:
-            print key, self.delimiter_name_symb[key]
-            self.sep = self.delimiter_name_symb[key]
-        except:
-            #else custom option. process the text box
-            pass
-        self.load_file_preview()
-    ''' 
-    def _map_dataframe_to_QTableWidget(self, dataframe, qt_table):
-        """"generalized so that it can be used with any QTableWidget"""
-        
-        collabels = dataframe.columns
-        rowlabels = dataframe.index
-        
-        #for column with row labels
-        #iterate thru the rows of the column and add info to col 0
-        for n, row in enumerate(rowlabels, start=1):
-            qt_table.setItem(n, 0, qtg.QTableWidgetItem(str(row)))
-
-        #for each column in table
-        #get column name. get column data
-        #iterate thru the rows of the column and add info
-        for n, col in enumerate(collabels, start=1):
-            qt_table.setItem(0, n, qtg.QTableWidgetItem(str(col)))
-            for ne, elem in enumerate(dataframe[col], start=1):
-                qt_table.setItem(ne, n, qtg.QTableWidgetItem(str(elem)))
-
-    
-    def from_csv(self):
-        """
-        modified from answer to stackoverflow question 10636024
-        answer provided by user1319128 at Aug 20 '12 at 11:30 
-        edited by Rostyslav Dzinko at Aug 20 '12 at 13:28 
-        """
-        numrows = 5
-        if not (self.filepath and self.sep):
-            print "fail to display table."
-        
-        df  = pd.read_table(str(self.filepath), sep=self.sep, index_col = 0, header = 0, nrows=numrows)
-
-        #add 1 to both column and row count to include row and column labels
-        self.preview_table.setColumnCount(len(df.columns))
-        self.preview_table.setRowCount(len(df.index))
-        
-        self._map_dataframe_to_QTableWidget(df, self.preview_table)
-    '''
     
     def error_dialog(self, exception):
-        err_dialog = qtg.QMessageBox(title=str(type(exception)), text=exception.message, parent=self)
-        close = qtg.QPushButton(text="C&lose", parent=err_dialog)
-        err_dialog.addButton(close, 0)
-        close.clicked.connect(err_dialog.closeEvent)
+        title_str = str(type(exception))
+        err_dialog = qtg.QMessageBox(text=exception.message, parent=self)
+        err_dialog.setStandardButtons(qtg.QMessageBox.Close)
+        err_dialog.show()
+        #close = qtg.QPushButton(text="C&lose", parent=err_dialog)
+        #err_dialog.addButton(close, 0)
+        #close.clicked.connect(err_dialog.closeEvent)
         
     def load_file_preview(self):
     
@@ -122,28 +89,30 @@ class Example(qtg.QWidget):
         
         #check for self.filepath
         try:
-            if not os.path.isfile(self.filepath):
-                return
+            if self.filepath == "":
+                return 
+            elif not os.path.isfile(self.filepath):
+                raise IOError("Must specify a valid file.")
         except Exception as e:
             #not sure this part is actually necessary
             self.error_dialog(e)
-                    
-        #check for self.sep
-        try:
-            self.sep
-        except:
-            self.sep = ","
+            return
             
-            
-        #open file, read lines, split by delimiter
+        #open file, read lines        #split lines by delimiter 
+
+        #originally this and the loop below were a single loop
+        #I separated them into two, so that I can put them
+        #in separate functions later
         all_lines = []
         with open(self.filepath) as f:
         
             for n, line in enumerate(f):
                 if n >= numrows:
                     break
-                
-                elements = line.strip().split(self.sep)
+                try:
+                    elements = line.strip().split(self.sep)
+                except ValueError:
+                    elements = [line.strip()] #empty separator
                 all_lines.append(elements)
         
         # determine max row length
@@ -156,13 +125,38 @@ class Example(qtg.QWidget):
             for nn, element in enumerate(line):
                 item = qtg.QTableWidgetItem(str(element))
                 self.preview_table.setItem(n, nn, item)
+                
+        self.preview_table.resizeColumnsToContents()
+        self.preview_table.resizeRowsToContents()
         
-    
-
+        
+        
+    def get_custom_sep(self):
+        self.sep = self.custom_text.text()
+        self.load_file_preview()
+                
+    def handle_sep_buttonpress(self):
+            button = self.sep_btns.checkedButton()
+            key = str(button.text())
+            if key.lower() == "custom":
+                #else custom option. process the text box
+                #set custom button to on
+                self.custom_text.setFocus()
+                if self.custom_text.text():
+                    self.sep = self.custom_text.text()
+            else:
+                try:
+                    self.sep = self.delimiter_name_symb[key]
+                except:
+                    return
+            self.load_file_preview()
+            
+            
+            
     def initUI(self, width, height):
         #setup and show window
         self.setGeometry(0, 0, width, height)
-        self.setMinimumSize(500,650)
+        self.setMinimumSize(500,500)
         self.center()
         self.setWindowTitle("Signal Analysis") #once a file has been imported, change the name
             
@@ -210,7 +204,7 @@ class Example(qtg.QWidget):
         outputfolder_box.addWidget(self.output_datapath)
         outputfolder_box.addWidget(folder_dialog_btn)
 
-        #connections
+        #connect file dialogs to approp. buttons and
         file_dialog_btn.clicked.connect(self.open_file_dialog)
         folder_dialog_btn.clicked.connect(self.open_dir_dialog)
         self.input_datapath.textChanged.connect(self.load_file_preview)
@@ -222,27 +216,32 @@ class Example(qtg.QWidget):
         load_page.addLayout(filepath_boxes)
         
         ## separators
-        separators_label = qtg.QLabel('Separators')
-        custom_sep_label = qtg.QLabel('custom')
+        separators_label = qtg.QLabel('Delimiters')
 
+        #provided separators
         comma_sep = qtg.QRadioButton('comma', self)
         comma_sep.setChecked(True)
         tab_sep = qtg.QRadioButton('tab', self)
         space_sep = qtg.QRadioButton('space', self)
+
+        #custom separator
+        custom_sep_label = qtg.QLabel('custom:')
         custom_sep = qtg.QRadioButton('custom', self)
-        custom_text = qtg.QLineEdit('custom', self)
-        custom_text.setReadOnly(True) #if custom_sep check, change to false
-        self.btn_group = qtg.QButtonGroup()
-        self.btn_group.addButton(comma_sep)
-        self.btn_group.addButton(tab_sep)
-        self.btn_group.addButton(space_sep)
-        self.btn_group.addButton(custom_sep)
+        self.custom_text = qtg.QLineEdit(parent=self)
+        self.custom_text.setPlaceholderText('enter custom delimiter symbol')
         
+        #self.custom_text.focusInEvent()
         
-        self.btn_group.buttonClicked.connect(self.set_sep)
-        #commma_sep.toggle.connect()
-    
-        #btn_group.stateChanged.connect(
+        self.sep_btns = qtg.QButtonGroup()
+        self.sep_btns.addButton(comma_sep)
+        self.sep_btns.addButton(tab_sep)
+        self.sep_btns.addButton(space_sep)
+        self.sep_btns.addButton(custom_sep)
+        
+        #handel button clicks
+        self.sep_btns.buttonClicked.connect(self.handle_sep_buttonpress)
+        #if custom_text is focused on, auto check the custom button
+        self.custom_text.textChanged.connect(self.get_custom_sep)
         
         separators = qtg.QHBoxLayout()
         separators.addWidget(separators_label)
@@ -250,19 +249,19 @@ class Example(qtg.QWidget):
         separators.addWidget(tab_sep)
         separators.addWidget(space_sep)
         separators.addWidget(custom_sep)
-        separators.addWidget(custom_text)
-        
+        separators.addWidget(self.custom_text)
+
         load_page.addLayout(separators)
         
         # row boundaries, time column
-        first_row_label = qtg.QLabel('First Row (include column labels)')
-        last_row_label = qtg.QLabel('Last Row')
+        first_row_label = qtg.QLabel("First Row (include column labels)")
+        last_row_label = qtg.QLabel("Last Row")
         first_row = qtg.QSpinBox()
         last_row = qtg.QSpinBox()
         first_row.setWrapping(True)
         last_row.setWrapping(True)
         
-        time_col_label = qtg.QLabel('Time Col')
+        time_col_label = qtg.QLabel("Time Col")
         time_col = qtg.QSpinBox()
         time_col.setWrapping(True)
         
@@ -277,6 +276,7 @@ class Example(qtg.QWidget):
         row_boundries.addWidget(reset_cols_btn)
         
         load_page.addLayout(row_boundries)
+
 
         ## file preview
         file_prev_label = qtg.QLabel('File Preview')
@@ -303,6 +303,46 @@ class Example(qtg.QWidget):
         size = self.geometry()
         self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2) 
         
+        
+    ''' 
+    def _map_dataframe_to_QTableWidget(self, dataframe, qt_table):
+        """"generalized so that it can be used with any QTableWidget"""
+        
+        collabels = dataframe.columns
+        rowlabels = dataframe.index
+        
+        #for column with row labels
+        #iterate thru the rows of the column and add info to col 0
+        for n, row in enumerate(rowlabels, start=1):
+            qt_table.setItem(n, 0, qtg.QTableWidgetItem(str(row)))
+
+        #for each column in table
+        #get column name. get column data
+        #iterate thru the rows of the column and add info
+        for n, col in enumerate(collabels, start=1):
+            qt_table.setItem(0, n, qtg.QTableWidgetItem(str(col)))
+            for ne, elem in enumerate(dataframe[col], start=1):
+                qt_table.setItem(ne, n, qtg.QTableWidgetItem(str(elem)))
+
+    
+    def from_csv(self):
+        """
+        modified from answer to stackoverflow question 10636024
+        answer provided by user1319128 at Aug 20 '12 at 11:30 
+        edited by Rostyslav Dzinko at Aug 20 '12 at 13:28 
+        """
+        numrows = 5
+        if not (self.filepath and self.sep):
+            print "fail to display table."
+        
+        df  = pd.read_table(str(self.filepath), sep=self.sep, index_col = 0, header = 0, nrows=numrows)
+
+        #add 1 to both column and row count to include row and column labels
+        self.preview_table.setColumnCount(len(df.columns))
+        self.preview_table.setRowCount(len(df.index))
+        
+        self._map_dataframe_to_QTableWidget(df, self.preview_table)
+    '''
         
 
 def main():

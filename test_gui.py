@@ -180,8 +180,6 @@ class Example(qtg.QWidget):
 
         load_page = qtg.QVBoxLayout(load_tab) # connects load page and tab
         
-        ### Page Components
-
         ## make input file fields
         input_label = qtg.QLabel('Data File:')
         self.input_datapath = qtg.QLineEdit()
@@ -194,7 +192,8 @@ class Example(qtg.QWidget):
         folder_dialog_btn = qtg.QPushButton(icon=self.openicon,text="")
         folder_dialog_btn.setIconSize(qtc.QSize(20, 20))
 
-        #connect file dialogs to approp. buttons and
+        ## connect file dialogs to approp. buttons 
+        ## and load preview when input file changes
         file_dialog_btn.clicked.connect(self.open_file_dialog)
         folder_dialog_btn.clicked.connect(self.open_dir_dialog)
         self.input_datapath.textChanged.connect(self.load_file_preview)
@@ -218,10 +217,22 @@ class Example(qtg.QWidget):
         self.custom_text = qtg.QLineEdit(parent=self)
         self.custom_text.setPlaceholderText('enter custom delimiter symbol')
         
-        #handel button clicks
+        #handle button clicks
         self.sep_btns.buttonClicked.connect(self.handle_sep_buttonpress)
         #if custom_text is focused on, auto check the custom button
         self.custom_text.textChanged.connect(self.get_custom_sep)
+        
+        ## file preview
+        reset_cols_btn = qtg.QPushButton("R&eset Selected Cols")
+        select_all_cols_btn = qtg.QPushButton("S&elect All Cols")
+
+        file_prev_label = qtg.QLabel('File Preview. Select columns to import.')
+        self.preview_table = qtg.QTableWidget(self)
+        self.preview_table.setSelectionMode(qtg.QAbstractItemView.MultiSelection)
+        self.preview_table.setSelectionBehavior(qtg.QAbstractItemView.SelectColumns)
+        reset_cols_btn.clicked.connect(self.preview_table.clearSelection)
+        self.preview_table.selectAll()
+        #itemDelegateForRow(int)
         
         ## row boundaries, time column
         first_row_label = qtg.QLabel("First Row (include column labels)")
@@ -231,18 +242,13 @@ class Example(qtg.QWidget):
         first_row.setWrapping(True)
         last_row.setWrapping(True)
         
+        ## make selector for indicating which col is time column
         time_col_label = qtg.QLabel("Time Col")
         time_col = qtg.QSpinBox()
         time_col.setWrapping(True)
         
-        reset_cols_btn = qtg.QPushButton("&Reset Column Selection")
 
-        ## file preview
-        file_prev_label = qtg.QLabel('File Preview. Select columns to import.')
-        self.preview_table = qtg.QTableWidget(self)
-        self.preview_table.setSelectionMode(qtg.QAbstractItemView.MultiSelection)
-        self.preview_table.setSelectionBehavior(qtg.QAbstractItemView.SelectColumns)
-        reset_cols_btn.clicked.connect(self.preview_table.clearSelection)
+
 
         ##positon elements on load_page tab        
         
@@ -274,11 +280,14 @@ class Example(qtg.QWidget):
         row_boundries.addWidget(last_row_label)
         row_boundries.addWidget(last_row)
         row_boundries.addWidget(time_col_label)
-        row_boundries.addWidget(time_col)
-        row_boundries.addWidget(reset_cols_btn)        
+        row_boundries.addWidget(time_col)        
         
         table_box = qtg.QVBoxLayout()
-        table_box.addWidget(file_prev_label)
+        temp = qtg.QHBoxLayout()
+        temp.addWidget(file_prev_label)
+        temp.addWidget(reset_cols_btn)
+        temp.addWidget(select_all_cols_btn)
+        table_box.addLayout(temp)
         table_box.addWidget(self.preview_table)
         
         #add all boxes to load_page tab

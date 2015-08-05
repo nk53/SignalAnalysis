@@ -8,6 +8,12 @@ what sorts of settings/preferences might I provide?
 -default comment type
 
 
+on csv import tab, table preview:
+-can I make multiple different selections with diff colors?
+-can I differentiate between selections made by clicking and selections made programmatically?
+-how to I change a column, row, or cells background color?
+
+
 doc string formatting:
 http://sphinx-doc.org/latest/ext/napoleon.html
 http://google.github.io/styleguide/pyguide.html#Comments
@@ -31,8 +37,11 @@ class Example(qtg.QWidget):
         self.delimiter_name_symb = {"comma":",", "space": " ", "tab": "\t"}
         self.filepath = "/Users/morganfine-morris/test/t_vals from 2way ANOVA of Peaks per Burst.csv" #test file
         self.curr_dir = os.path.expanduser("~")
-        self.openicon = qtg.QIcon("pics/open_folder.png") #'file dialog' icon
         self.sep = "," #temporarily set to "," until separators section works
+        
+        ## icons
+        self.openicon = qtg.QIcon("pics/open_folder.png") #'file dialog' icon
+
 
         self.initUI(width, height)
         
@@ -129,8 +138,14 @@ class Example(qtg.QWidget):
         self.preview_table.resizeColumnsToContents()
         self.preview_table.resizeRowsToContents()
         
+        #uncomment line below to select all cols by default 
+        #self.preview_table.selectAll() 
+
         
         
+    #def a():
+    #    self.preview_table.item.selected( background-color = red )
+           
     def get_custom_sep(self):
         self.sep = self.custom_text.text()
         self.load_file_preview()
@@ -228,10 +243,17 @@ class Example(qtg.QWidget):
 
         file_prev_label = qtg.QLabel('File Preview. Select columns to import.')
         self.preview_table = qtg.QTableWidget(self)
+        
+        #self.preview_table.item.background_color= "blue"
+        #self.preview_table.item.selected( background_color = red )
+        
         self.preview_table.setSelectionMode(qtg.QAbstractItemView.MultiSelection)
         self.preview_table.setSelectionBehavior(qtg.QAbstractItemView.SelectColumns)
         reset_cols_btn.clicked.connect(self.preview_table.clearSelection)
-        self.preview_table.selectAll()
+        select_all_cols_btn.clicked.connect(self.preview_table.selectAll)
+        #self.preview_table.setRangeSelected
+
+        
         #itemDelegateForRow(int)
         
         ## row boundaries, time column
